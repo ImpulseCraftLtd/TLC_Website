@@ -19,9 +19,7 @@ const Footer = () => {
 
   const involvedLinks: { label: string; path: string }[] = [
     { label: "Donate", path: "/foundation/payment" },
-    { label: "Partner with Us", path: "/get-involved" },
-    { label: "Blog & News", path: "/get-involved" },
-    { label: "Join the Community", path: "/get-involved" },
+    { label: "Partner with Us", path: "/get-involved" }
   ];
 
   const generalLinks: { label: string; path: string }[] = [

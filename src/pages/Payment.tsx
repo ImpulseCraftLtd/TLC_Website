@@ -43,8 +43,9 @@ const Payment = () => {
                     <div className="border border-gray-200 h-28 lg:h-36 rounded-2xl p-4 lg:p-10 flex justify-center items-center">
                         <img loading="lazy" className="size-40 lg:size-60 object-contain" src={paystack} alt="" />
                     </div>
-                    <div className="border border-gray-200 h-28 lg:h-36 rounded-2xl p-1 lg:p-8 flex justify-center items-center">
-                        <img loading="lazy" className="size-40 lg:size-60 object-contain" src={gofundme} alt="" />
+                    <div className="border border-gray-200 h-28 lg:h-36 rounded-2xl w-1/2 p-1 lg:px-8 lg:py-4 flex flex-col justify-center items-center">
+                        <img loading="lazy" className="size-20 lg:size-45 object-contain" src={gofundme} alt="" />
+                        <p className="italic text-xs w-full flex items-center justify-center text-[#1a5c2e] pb-6">**Coming Soon</p>
                     </div>
                 </div>
                 <button onClick={() => navigate(-1)} className="mt-4 text-[16px] flex items-start justify-start text-[#1a5c2e] hover:underline">

@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
-import { FaGraduationCap } from "react-icons/fa6";
+import { FaFilter, FaGraduationCap } from "react-icons/fa6";
 import rocket from "../assets/images/814bf50b0adcc7b27ec7bab18515925e250488bb.png"
 import insideSelToolkitImg from "../assets/images/inside.png"
 import nduStudentResourcesImg from "../assets/images/nd social.png"
@@ -415,19 +415,98 @@ function Pagination({ page, total, perPage, onChange }: {
 //   transition: { duration: 0.65, delay, ease: [0.16, 1, 0.3, 1] },
 // })
 
+// Derive unique categories from ALL_CARDS for the filter modal
+const ALL_CATEGORIES = Array.from(new Set(ALL_CARDS.map((c) => c.category)));
+
+// Map a card category to the closest TabKey, falling back to "all"
+const CATEGORY_TO_TAB: Record<string, TabKey> = {
+  TOOLKIT:        "toolkits",
+  TOOLKITS:       "toolkits",
+  GUIDE:          "ebooks",
+  REPORT:         "ebooks",
+  "LESSON PLANS": "ebooks",
+  CURRICULUM:     "curriculum",
+  TRAINING:       "teacher-dev",
+  PLATFORM:       "teacher-dev",
+  WEBINAR:        "videos",
+  VIDEO:          "videos",
+};
+
 export default function ResourceHub() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<TabKey>("all");
-  const [page, setPage] = useState(1);
 
-  const filtered = ALL_CARDS.filter((c) => c.tabs.includes(activeTab));
-  const paginated = filtered.slice((page - 1) * CARDS_PER_PAGE, page * CARDS_PER_PAGE);
-  const countForTab = (key: TabKey) => ALL_CARDS.filter((c) => c.tabs.includes(key)).length;
+  // ── Tab & pagination state ──────────────────────────────────────────────────
+  const [activeTab, setActiveTab]       = useState<TabKey>("all");
+  const [page, setPage]                 = useState(1);
 
+  // ── Search state ────────────────────────────────────────────────────────────
+  const [searchQuery, setSearchQuery]   = useState<string>("");
+  const [isSearchActive, setIsSearchActive] = useState<boolean>(false);
+
+  // ── Filter modal state ──────────────────────────────────────────────────────
+  const [showFilterModal, setShowFilterModal] = useState<boolean>(false);
+
+  // ── Ref for smooth-scrolling to the resource grid ──────────────────────────
+  const resourceSectionRef = useRef<HTMLDivElement>(null);
+
+  // ── Handlers ────────────────────────────────────────────────────────────────
   const handleTabChange = (key: TabKey) => {
     setActiveTab(key);
     setPage(1);
+    setIsSearchActive(false);
+    setSearchQuery("");
   };
+
+  const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery("");
+    setIsSearchActive(false);
+    setActiveTab("all");
+    setPage(1);
+  };
+
+  const handleExploreClick = () => {
+    setIsSearchActive(true);
+    setPage(1);
+    resourceSectionRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const handleFilterByCategory = (category: string) => {
+    const tab: TabKey = CATEGORY_TO_TAB[category] ?? "all";
+    setActiveTab(tab);
+    setPage(1);
+    setIsSearchActive(false);
+    setSearchQuery("");
+    setShowFilterModal(false);
+    resourceSectionRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // ── Derived data ─────────────────────────────────────────────────────────────
+  /**
+   * When a search is active, filter ALL_CARDS across every field.
+   * When no search is active, filter by the active tab as before.
+   */
+  const filtered = useMemo<Card[]>(() => {
+    if (isSearchActive && searchQuery.trim() !== "") {
+      const q = searchQuery.trim().toLowerCase();
+      return ALL_CARDS.filter((card) => {
+        const inTitle       = card.title.toLowerCase().includes(q);
+        const inCategory    = card.category.toLowerCase().includes(q);
+        const inDescription = card.description.toLowerCase().includes(q);
+        const inTags        = card.tags.some((tag) =>
+          tag.label.toLowerCase().includes(q)
+        );
+        return inTitle || inCategory || inDescription || inTags;
+      });
+    }
+    return ALL_CARDS.filter((c) => c.tabs.includes(activeTab));
+  }, [searchQuery, isSearchActive, activeTab]);
+
+  const paginated = filtered.slice((page - 1) * CARDS_PER_PAGE, page * CARDS_PER_PAGE);
+  const countForTab = (key: TabKey) => ALL_CARDS.filter((c) => c.tabs.includes(key)).length;
 
   return (
     <>
@@ -457,21 +536,78 @@ export default function ResourceHub() {
                 and evidence-based SEL practices.
               </p>
 
-              <div className="w-full flex flex-col sm:flex-row gap-4">
+                <div className="w-full flex flex-col sm:flex-row gap-4">
                   <div className="flex items-center rounded-xl gap-4 lg:gap-30 shadow-xl shadow-black/50 overflow-hidden flex-1">
                     <input
                       type="text"
+                      value={searchQuery}
+                      onChange={handleSearchInput}
+                      onKeyDown={(e) => e.key === "Enter" && handleExploreClick()}
                       placeholder="Search resources, toolkits, guides..."
-                      className="flex-1 text-gray-700 text-sm pl-4 lg:pl-6 py-3 md:py-5 outline-none bg-white placeholder-gray-400 min-w-0"
+                      className="flex-1 text-gray-700 text-md pl-4 lg:pl-6 py-3 md:py-5 outline-none bg-white placeholder-gray-400 min-w-0"
                     />
-                    <button className="bg-[#119B53] text-white text-sm font-semibold px-4 lg:px-6 py-3 md:py-6 whitespace-nowrap hover:bg-[#0e8a48] transition-colors">
+                    <button
+                      onClick={handleExploreClick}
+                      className="bg-[#119B53] text-white text-md font-semibold px-4 lg:px-6 py-3 md:py-6 whitespace-nowrap hover:bg-[#0e8a48] transition-colors"
+                    >
                       Explore Programs
                     </button>
                   </div>                
-                  <button className="flex flex-row gap-2 bg-black text-white text-md font-medium px-6 lg:px-10 py-3 md:py-5 rounded-xl shadow-xl shadow-black/10 justify-center">
-                  Filter
-                </button>
-              </div>
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowFilterModal((prev) => !prev)}
+                      className="flex flex-row gap-2 bg-black text-white text-md font-medium h-full items-center px-6 lg:px-10 py-3 md:py-6 rounded-xl shadow-xl shadow-black/10 justify-center"
+                    >
+                      Filter <FaFilter className="size-5 flex items-center justify-center h-full" />
+                    </button>
+
+                    {showFilterModal && (
+                      <div className="absolute right-0 top-full mt-4 w-90 bg-white border border-gray-200 rounded-2xl shadow-2xl p-4 z-50">
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-xs text-gray-800">Filter by Category</h3>
+                          <button
+                            onClick={() => setShowFilterModal(false)}
+                            className="text-gray-400 hover:text-gray-600 text-lg font-bold transition-colors leading-none"
+                            aria-label="Close filter"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <div className="grid grid-cols-3 justify-between gap-3">
+                            <button
+                              onClick={() => handleFilterByCategory("")}
+                              className={`text-left text-[10px] font-medium p-2 rounded-lg transition-colors border ${
+                                activeTab === "all" && !isSearchActive
+                                  ? "bg-[#1a5c2e] text-white border-[#1a5c2e]"
+                                  : "text-gray-700 border-gray-100 hover:bg-gray-50"
+                              }`}
+                            >
+                              All Categories
+                            </button>
+                            {ALL_CATEGORIES.map((cat) => {
+                              const mappedTab = CATEGORY_TO_TAB[cat] ?? "all";
+                              const isSelected = !isSearchActive && activeTab === mappedTab;
+                              return (
+                                <button
+                                  key={cat}
+                                  onClick={() => handleFilterByCategory(cat)}
+                                  className={`text-left text-[10px] font-medium p-2 rounded-lg transition-colors border ${
+                                    isSelected
+                                      ? "bg-[#1a5c2e] text-white border-[#1a5c2e]"
+                                      : "text-gray-700 border-gray-100 hover:bg-gray-50"
+                                  }`}
+                                >
+                                  {cat}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </motion.div>
               <motion.div className="hidden lg:block pr-15" initial={{opacity:0,scale:0.8}} animate={{opacity:1,scale:1}} transition={{duration:0.9,delay:0.2,ease:[0.16,1,0.3,1]}}>
                 <img loading="lazy" className="h-120 w-120 object-contain -rotate-45" src={rocket} alt="" />
@@ -479,9 +615,14 @@ export default function ResourceHub() {
               </div>
             </div>
    
-        <div className="w-full px-6 md:px-12 lg:px-20 py-10 lg:py-15 bg-gradient-to-b from-gray-100 to-white">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">{TAB_TITLES[activeTab]}</h1>
+        <div ref={resourceSectionRef} className="w-full px-6 md:px-12 lg:px-20 py-10 lg:py-15 bg-gradient-to-b from-gray-100 to-white">
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">
+          {isSearchActive && searchQuery.trim() !== ""
+            ? `Search results for "${searchQuery.trim()}" (${filtered.length})`
+            : TAB_TITLES[activeTab]}
+        </h1>
 
+        {!isSearchActive && (
         <div className="flex overflow-x-auto gap-x-0 gap-y-0 border-b border-gray-200 mb-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {TABS.map((tab) => {
             const count = countForTab(tab.key);
@@ -504,14 +645,25 @@ export default function ResourceHub() {
             );
           })}
         </div>
+        )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {paginated.map((card, i) => (
-            <motion.div key={card.id} initial={{opacity:0,y:24}} whileInView={{opacity:1,y:0}} viewport={{once:true,margin:"-40px"}} transition={{duration:0.55,delay:i*0.06,ease:[0.16,1,0.3,1]}}>
-              <ResourceCard card={card} onNavigate={(path) => navigate(path)} />
-            </motion.div>
-          ))}
-        </div>
+        {isSearchActive && <div className="mb-6" />}
+
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-gray-400 gap-3">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <p className="text-lg font-medium text-gray-500">No results found</p>
+            <p className="text-sm">Try a different search term or <button onClick={handleClearSearch} className="text-[#1a5c2e] underline font-medium">clear the search</button>.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {paginated.map((card, i) => (
+              <motion.div key={card.id} initial={{opacity:0,y:24}} whileInView={{opacity:1,y:0}} viewport={{once:true,margin:"-40px"}} transition={{duration:0.55,delay:i*0.06,ease:[0.16,1,0.3,1]}}>
+                <ResourceCard card={card} onNavigate={(path) => navigate(path)} />
+              </motion.div>
+            ))}
+          </div>
+        )}
 
         <Pagination page={page} total={filtered.length} perPage={CARDS_PER_PAGE} onChange={setPage} />
       </div>

@@ -24,13 +24,13 @@ import oguntade from "../assets/images/oguntade.jpg"
 import rhoda from "../assets/images/rhoda.png"
 import frame from "../assets/images/b1f0021147a6f7cfc3a0274ab8e8e28cb4e00774.png"
 import Footer from "../components/Footer";
-import videoFile from "../assets/images/NDU_SEL_PROMO.mp4"
+import highlightReel from "../assets/images/Highlight.mp4"
 import img1 from "../assets/images/img1.jpg"
 import img2 from "../assets/images/img2.jpg"
 import img3 from "../assets/images/img3.jpg"
 import img4 from "../assets/images/img4.jpg"
 import img5 from "../assets/images/img5.jpg"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 
 const inView = (delay = 0) => ({
   initial: { opacity: 0, y: 28 },
@@ -41,6 +41,7 @@ const inView = (delay = 0) => ({
 
 const PACSEL = () => {
   const navigate = useNavigate();
+  const highlightReelRef = useRef<HTMLDivElement>(null);
 
   const allImages = [img1, img2, img3, img4, img5]
 const [rotation, setRotation] = useState(0)
@@ -77,7 +78,7 @@ const imgs = allImages.map((_, i) => allImages[(i + rotation) % allImages.length
               </p>
 
               <div className="flex gap-4 lg:gap-10">
-                <button onClick={() => navigate('/foundation/pacsel')} className="bg-[#F5C518] text-[#10502F] tracking-wide text-sm lg:text-lg font-medium px-2 lg:px-6 py-3 lg:py-4 rounded-lg">
+                <button onClick={() => highlightReelRef.current?.scrollIntoView({ behavior: "smooth" })} className="bg-[#F5C518] text-[#10502F] tracking-wide text-sm lg:text-lg font-medium px-2 lg:px-6 py-3 lg:py-4 rounded-lg">
                   Conference Highlights
                 </button>
                 <button onClick={() => navigate('/get-involved')} className="text-white border border-white tracking-wide text-sm lg:text-lg font-medium px-2 lg:px-6 py-3 lg:py-4 rounded-lg">
@@ -143,7 +144,7 @@ const imgs = allImages.map((_, i) => allImages[(i + rotation) % allImages.length
             ))}
         </div>
       </div>
-      <div className="px-6 md:px-12 lg:px-20 py-10 lg:py-15 flex flex-col">
+      <div ref={highlightReelRef} className="px-6 md:px-12 lg:px-20 py-10 lg:py-15 flex flex-col">
         <div className="flex flex-col items-start gap-3 mb-6">
             <div className="flex flex-row items-center justify-center gap-3">
             <span className="w-6 h-0.5 bg-yellow-500 block" />
@@ -152,8 +153,8 @@ const imgs = allImages.map((_, i) => allImages[(i + rotation) % allImages.length
             <h2 className="text-3xl font-bold text-gray-900 my-5">PACSEL '25 Highlight Reel</h2>
             <p className="text-gray-400 text-md w-full lg:w-[50%] tracking-wide">Practitioners, researchers, and policymakers who shaped the PACSEL conversation.</p>
             <div className="flex w-full items-center border-none justify-center pt-10 max-w-7xl rounded-[3rem]">
-                <video className="rounded-[2rem] border-none overflow-hidden w-full lg:w-auto" width="900" height="650" autoPlay controls loop muted>
-                <source src={videoFile} type="video/mp4" />
+                <video className="rounded-[2rem] border-none overflow-hidden w-full lg:w-auto" width="700" height="500" autoPlay controls loop muted>
+                <source src={highlightReel} type="video/mp4" />
                 Your browser does not support the video tag.
             </video>
             </div>
